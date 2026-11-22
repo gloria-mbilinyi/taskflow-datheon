@@ -45,16 +45,31 @@ export function renderTasks(tasks) {
   const list = document.getElementById('task-list');
   list.replaceChildren();
   for (const task of tasks) {
-    const item = element('li', 'task-card');
+    const item = element('li', `task-card${task.completed ? ' is-completed' : ''}`);
     item.dataset.taskId = task.id;
+    const marker = element('span', 'task-marker');
+    marker.setAttribute('aria-hidden', 'true');
+    marker.append(icon(task.completed ? 'check-circle' : 'circle'));
     const content = element('div', 'task-content');
     content.append(element('h3', 'task-title', task.title));
     if (task.description) content.append(element('p', 'task-description', task.description));
-    content.append(element('div', 'task-metadata', `${task.category} · ${dueInfo(task.dueDate, task.completed).label} · ${task.completed ? 'Completed' : 'Active'}`));
-    item.append(content); list.append(item);
+    const metadata = element('div', 'task-metadata');
+    const badge = element('span', `category-badge ${task.category.toLowerCase()}`);
+    badge.append(icon({ Work: 'briefcase', Personal: 'person', Study: 'book' }[task.category]), document.createTextNode(task.category));
+    const due = dueInfo(task.dueDate, task.completed);
+    const date = element(task.dueDate ? 'time' : 'span', `due-label ${due.kind}`);
+    if (task.dueDate) date.dateTime = task.dueDate;
+    date.append(icon('calendar'), document.createTextNode(due.label));
+    metadata.append(badge, date, element('span', 'task-state', task.completed ? 'Completed' : 'Active'));
+    content.append(metadata);
+    const actions = element('div', 'task-actions');
+    actions.setAttribute('role', 'group');
+    actions.setAttribute('aria-label', `Actions for ${task.title}`);
+    item.append(marker, content, actions); list.append(item);
   }
   document.getElementById('empty-state').hidden = tasks.length > 0;
   document.getElementById('visible-count').textContent = tasks.length;
+  document.getElementById('list-caption').textContent = tasks.length ? 'A little intention. A little action. A little closer.' : 'Your next chapter starts with one small task.';
 }
 
 export function renderBasicCounts(tasks) {

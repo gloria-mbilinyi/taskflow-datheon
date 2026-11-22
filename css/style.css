@@ -83,6 +83,8 @@ h1 > span { color: var(--accent); }
 .task-list { padding: 0 18px; list-style: none; margin: 8px 0 0; }
 .task-card { position: relative; display: flex; align-items: flex-start; gap: 12px; padding: 19px 5px; border-bottom: 1px solid var(--line); border-radius: 5px; transition: background var(--transition), opacity var(--transition), transform var(--transition); }
 .task-card:last-child { border-bottom: none; }
+.task-marker { margin-top: 2px; color: var(--subtle); }
+.task-marker svg { width: 20px; height: 20px; }
 .task-card:hover { background: var(--surface-soft); }
 .task-check { appearance: none; display: grid; place-items: center; width: 20px; height: 20px; min-height: 20px; padding: 0; margin: 3px 0 0; border: 1.5px solid #b8b4c8; border-radius: 6px; }
 .task-check:checked { background: var(--accent); border-color: var(--accent); }
