@@ -20,3 +20,15 @@ test('combines status and category filters, including an empty result', () => {
   assert.deepEqual(filterTasks(tasks, { status: 'completed', category: 'Work' }), []);
   assert.deepEqual(tasks, [work, personal, study]);
 });
+test('searches titles, descriptions, and categories instantly and case-insensitively', () => {
+  assert.deepEqual(filterTasks(tasks, { query: ' JAVASCRIPT ' }), [study]);
+  assert.deepEqual(filterTasks(tasks, { query: 'personal' }), [personal]);
+  const note = createTask({ title: 'Shopping', description: 'Café supplies' });
+  assert.deepEqual(filterTasks([note], { query: 'cafe' }), [note]);
+  assert.deepEqual(filterTasks(tasks, { query: '  ' }), tasks);
+  assert.deepEqual(filterTasks(tasks, { query: '[' }), []);
+});
+test('combines search with both status and category without changing task order', () => {
+  assert.deepEqual(filterTasks(tasks, { status: 'active', category: 'Study', query: 'script' }), [study]);
+  assert.deepEqual(filterTasks(tasks, { status: 'completed', category: 'Study', query: 'script' }), []);
+});

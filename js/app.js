@@ -45,6 +45,19 @@ for (const button of document.querySelectorAll('[data-category]')) {
 const categoryFilter = document.getElementById('category-filter');
 categoryFilter.disabled = false;
 categoryFilter.addEventListener('change', () => { filters.category = categoryFilter.value; render(); announce(`${visibleTasks().length} tasks in this view.`); });
+const search = document.getElementById('search');
+search.disabled = false;
+let searchAnnouncement;
+search.addEventListener('input', () => {
+  filters.query = search.value; render();
+  clearTimeout(searchAnnouncement);
+  searchAnnouncement = setTimeout(() => announce(`${visibleTasks().length} tasks match your search and filters.`), 250);
+});
+document.addEventListener('keydown', event => {
+  if (event.key === '/' && !event.ctrlKey && !event.metaKey && !event.altKey && !event.target.matches('input, textarea, select, [contenteditable="true"]') && !document.querySelector('dialog[open]')) {
+    event.preventDefault(); search.focus();
+  }
+});
 
 function commitTasks(nextTasks, message) {
   const newlyCompleted = nextTasks.filter(task => task.completed && tasks.some(previous => previous.id === task.id && !previous.completed)).map(task => task.id);
