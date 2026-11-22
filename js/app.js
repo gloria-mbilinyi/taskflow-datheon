@@ -1,5 +1,6 @@
 import { createTask, updateTask, deleteTask, toggleTask, clearCompletedTasks, ValidationError } from './tasks.js';
 import { loadFromLocalStorage, saveToLocalStorage } from './storage.js';
+import { filterTasks } from './filters.js';
 import { renderTasks, renderBasicCounts, toast, showStorageWarning, announce, confirmAction } from './ui.js';
 
 const storageState = loadFromLocalStorage();
@@ -9,11 +10,41 @@ const dialog = document.getElementById('task-dialog');
 const form = document.getElementById('task-form');
 const quickForm = document.getElementById('quick-add');
 let dialogOpener;
+const filters = { status: 'all', category: 'all', query: '' };
+const isFiltered = () => filters.status !== 'all' || filters.category !== 'all' || !!filters.query.trim();
+const visibleTasks = () => filterTasks(tasks, filters);
 
 function render() {
-  renderTasks(tasks);
+  renderTasks(visibleTasks(), { total: tasks.length, filtered: isFiltered() });
   renderBasicCounts(tasks);
+  for (const button of document.querySelectorAll('[data-status]')) {
+    const selected = button.dataset.status === filters.status;
+    button.classList.toggle('is-selected', selected); button.setAttribute('aria-pressed', selected);
+  }
+  for (const button of document.querySelectorAll('[data-category]')) {
+    const selected = button.dataset.category === filters.category;
+    button.classList.toggle('is-selected', selected); button.setAttribute('aria-pressed', selected);
+  }
+  document.getElementById('category-filter').value = filters.category;
 }
+
+function resetFilters() {
+  Object.assign(filters, { status: 'all', category: 'all', query: '' });
+  document.getElementById('search').value = '';
+  render(); announce('All tasks shown. Filters cleared.');
+}
+
+for (const button of document.querySelectorAll('[data-status]')) {
+  button.disabled = false;
+  button.addEventListener('click', () => { filters.status = button.dataset.status; render(); announce(`${visibleTasks().length} tasks in this view.`); });
+}
+for (const button of document.querySelectorAll('[data-category]')) {
+  button.disabled = false;
+  button.addEventListener('click', () => { filters.category = filters.category === button.dataset.category ? 'all' : button.dataset.category; render(); announce(`${visibleTasks().length} tasks in this view.`); });
+}
+const categoryFilter = document.getElementById('category-filter');
+categoryFilter.disabled = false;
+categoryFilter.addEventListener('change', () => { filters.category = categoryFilter.value; render(); announce(`${visibleTasks().length} tasks in this view.`); });
 
 function commitTasks(nextTasks, message) {
   const newlyCompleted = nextTasks.filter(task => task.completed && tasks.some(previous => previous.id === task.id && !previous.completed)).map(task => task.id);
@@ -52,7 +83,7 @@ function openTaskDialog(opener, task = null) {
 
 for (const button of document.querySelectorAll('[data-new-task]')) {
   button.disabled = false;
-  button.addEventListener('click', () => openTaskDialog(button));
+  button.addEventListener('click', () => { if (button.id === 'empty-action' && isFiltered()) resetFilters(); else openTaskDialog(button); });
 }
 for (const button of document.querySelectorAll('[data-close-dialog]')) button.addEventListener('click', () => dialog.close());
 dialog.addEventListener('close', () => {

@@ -74,7 +74,7 @@ export function confirmAction({ title, description, accept = 'Delete task', canc
   });
 }
 
-export function renderTasks(tasks) {
+export function renderTasks(tasks, { total = tasks.length, filtered = false } = {}) {
   const list = document.getElementById('task-list');
   list.replaceChildren();
   for (const task of tasks) {
@@ -104,7 +104,11 @@ export function renderTasks(tasks) {
   }
   document.getElementById('empty-state').hidden = tasks.length > 0;
   document.getElementById('visible-count').textContent = tasks.length;
-  document.getElementById('list-caption').textContent = tasks.length ? 'A little intention. A little action. A little closer.' : 'Your next chapter starts with one small task.';
+  document.getElementById('list-caption').textContent = filtered ? `Showing ${plural(tasks.length)} of ${total} in your workspace.` : tasks.length ? 'A little intention. A little action. A little closer.' : 'Your next chapter starts with one small task.';
+  document.getElementById('empty-title').textContent = filtered ? 'A little too quiet in this view.' : 'A clear space. A fresh start.';
+  document.getElementById('empty-description').textContent = filtered ? 'Try another filter or clear your search to find what you’re looking for.' : 'Big plans start small. Add your first task and take it from there.';
+  const emptyAction = document.getElementById('empty-action');
+  emptyAction.replaceChildren(icon(filtered ? 'close' : 'plus'), document.createTextNode(filtered ? 'Clear filters' : 'Create your first task'));
 }
 
 export function renderBasicCounts(tasks) {
