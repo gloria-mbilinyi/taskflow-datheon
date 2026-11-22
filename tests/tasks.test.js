@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createTask, updateTask, normalizeTaskInput, isStoredTask, ValidationError } from '../js/tasks.js';
+import { createTask, updateTask, deleteTask, normalizeTaskInput, isStoredTask, ValidationError } from '../js/tasks.js';
 import { dueInfo, isValidDate, localDateKey } from '../js/utils.js';
 
 test('creates a valid task with unique ID and both timestamps', () => {
@@ -59,4 +59,11 @@ test('updates all editable fields without changing identity or original creation
   assert.equal(original.title, 'Original');
   assert.throws(() => updateTask([original], original.id, { title: '  ' }), ValidationError);
   assert.throws(() => updateTask([original], 'missing', { title: 'x' }));
+});
+test('deletes only the requested task without mutating other records', () => {
+  const first = createTask({ title: 'First' }); const second = createTask({ title: 'Second' });
+  const tasks = [first, second];
+  assert.deepEqual(deleteTask(tasks, first.id), [second]);
+  assert.deepEqual(tasks, [first, second]);
+  assert.deepEqual(deleteTask(tasks, 'missing'), tasks);
 });

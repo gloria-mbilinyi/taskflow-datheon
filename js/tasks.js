@@ -49,3 +49,7 @@ export function updateTask(tasks, id, changes, now = new Date()) {
   const updated = { ...current, ...normalized, updatedAt: now.toISOString() };
   return tasks.map(task => task.id === id ? updated : task);
 }
+
+export function deleteTask(tasks, id) {
+  return tasks.filter(task => task.id !== id);
+}

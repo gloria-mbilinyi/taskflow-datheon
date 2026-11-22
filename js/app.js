@@ -1,6 +1,6 @@
-import { createTask, updateTask, ValidationError } from './tasks.js';
+import { createTask, updateTask, deleteTask, ValidationError } from './tasks.js';
 import { loadFromLocalStorage, saveToLocalStorage } from './storage.js';
-import { renderTasks, renderBasicCounts, toast, showStorageWarning, announce } from './ui.js';
+import { renderTasks, renderBasicCounts, toast, showStorageWarning, announce, confirmAction } from './ui.js';
 
 const storageState = loadFromLocalStorage();
 let tasks = storageState.tasks;
@@ -61,12 +61,20 @@ dialog.addEventListener('close', () => {
   }
 });
 
-document.getElementById('task-list').addEventListener('click', event => {
+document.getElementById('task-list').addEventListener('click', async event => {
   const button = event.target.closest('[data-action]');
   const row = button?.closest('[data-task-id]');
   if (!row) return;
   const task = tasks.find(task => task.id === row.dataset.taskId);
   if (task && button.dataset.action === 'edit') openTaskDialog(button, task);
+  if (task && button.dataset.action === 'trash') {
+    const confirmed = await confirmAction({ title: 'Let this task go?', description: `“${task.title}” will be permanently deleted from this workspace. This cannot be undone.` });
+    if (!confirmed) return;
+    const index = [...document.querySelectorAll('.task-card')].findIndex(item => item.dataset.taskId === task.id);
+    commitTasks(deleteTask(tasks, task.id), 'Task deleted. A little more room to focus.');
+    const rows = document.querySelectorAll('.task-card');
+    (rows[Math.min(index, rows.length - 1)]?.querySelector('[data-action="edit"]') || document.getElementById('quick-title')).focus();
+  }
 });
 
 form.addEventListener('submit', event => {

@@ -50,6 +50,30 @@ export function actionButton(action, name, taskTitle, extraClass = '') {
   return button;
 }
 
+export function confirmAction({ title, description, accept = 'Delete task', cancel = 'Keep task', destructive = true }) {
+  const dialog = document.getElementById('confirm-dialog');
+  if (dialog.open) return Promise.resolve(false);
+  const opener = document.activeElement;
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-description').textContent = description;
+  const acceptButton = document.getElementById('confirm-accept');
+  const cancelButton = document.getElementById('confirm-cancel');
+  acceptButton.textContent = accept;
+  acceptButton.className = `button ${destructive ? 'danger' : 'primary'}`;
+  cancelButton.textContent = cancel;
+  dialog.returnValue = 'cancel';
+  acceptButton.onclick = () => dialog.close('confirm');
+  cancelButton.onclick = () => dialog.close('cancel');
+  return new Promise(resolve => {
+    dialog.addEventListener('close', () => {
+      if (opener?.isConnected) opener.focus();
+      resolve(dialog.returnValue === 'confirm');
+    }, { once: true });
+    dialog.showModal();
+    cancelButton.focus();
+  });
+}
+
 export function renderTasks(tasks) {
   const list = document.getElementById('task-list');
   list.replaceChildren();
@@ -75,6 +99,7 @@ export function renderTasks(tasks) {
     actions.setAttribute('role', 'group');
     actions.setAttribute('aria-label', `Actions for ${task.title}`);
     actions.append(actionButton('edit', 'Edit task', task.title));
+    actions.append(actionButton('trash', 'Delete task', task.title, 'delete-task'));
     item.append(marker, content, actions); list.append(item);
   }
   document.getElementById('empty-state').hidden = tasks.length > 0;
