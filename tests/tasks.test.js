@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createTask, normalizeTaskInput, isStoredTask, ValidationError } from '../js/tasks.js';
+import { createTask, updateTask, normalizeTaskInput, isStoredTask, ValidationError } from '../js/tasks.js';
 import { dueInfo, isValidDate, localDateKey } from '../js/utils.js';
 
 test('creates a valid task with unique ID and both timestamps', () => {
@@ -46,4 +46,17 @@ test('rejects malformed stored records without accepting partial task shapes', (
   assert.equal(isStoredTask({ title: 'x' }), false);
   assert.equal(isStoredTask(null), false);
   assert.equal(isStoredTask({ ...createTask({ title: 'x' }), updatedAt: 'bad' }), false);
+});
+test('updates all editable fields without changing identity or original creation time', () => {
+  const original = createTask({ title: 'Original' }, new Date('2026-11-20T09:00:00Z'));
+  const updated = updateTask([original], original.id, { title: ' Revised ', description: 'Notes', category: 'Personal', dueDate: '2026-12-01', completed: true, id: 'untrusted', createdAt: 'untrusted' }, new Date('2026-11-23T09:00:00Z'))[0];
+  assert.equal(updated.id, original.id);
+  assert.equal(updated.createdAt, original.createdAt);
+  assert.equal(updated.updatedAt, '2026-11-23T09:00:00.000Z');
+  assert.equal(updated.title, 'Revised');
+  assert.equal(updated.category, 'Personal');
+  assert.equal(updated.completed, true);
+  assert.equal(original.title, 'Original');
+  assert.throws(() => updateTask([original], original.id, { title: '  ' }), ValidationError);
+  assert.throws(() => updateTask([original], 'missing', { title: 'x' }));
 });

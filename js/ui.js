@@ -41,6 +41,15 @@ export function showStorageWarning(message) {
   document.getElementById('save-status').textContent = message ? 'Changes kept in this tab only' : 'Saved on this device';
 }
 
+export function actionButton(action, name, taskTitle, extraClass = '') {
+  const button = element('button', `icon-button ${extraClass}`.trim());
+  button.type = 'button'; button.dataset.action = action;
+  const label = `${name}: ${taskTitle}`;
+  button.setAttribute('aria-label', label); button.title = label;
+  button.append(icon(action));
+  return button;
+}
+
 export function renderTasks(tasks) {
   const list = document.getElementById('task-list');
   list.replaceChildren();
@@ -65,6 +74,7 @@ export function renderTasks(tasks) {
     const actions = element('div', 'task-actions');
     actions.setAttribute('role', 'group');
     actions.setAttribute('aria-label', `Actions for ${task.title}`);
+    actions.append(actionButton('edit', 'Edit task', task.title));
     item.append(marker, content, actions); list.append(item);
   }
   document.getElementById('empty-state').hidden = tasks.length > 0;

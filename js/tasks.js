@@ -41,3 +41,11 @@ export function isStoredTask(task) {
   }
   try { normalizeTaskInput(task); return true; } catch { return false; }
 }
+
+export function updateTask(tasks, id, changes, now = new Date()) {
+  const current = tasks.find(task => task.id === id);
+  if (!current) throw new Error('This task no longer exists.');
+  const normalized = normalizeTaskInput({ ...current, ...changes });
+  const updated = { ...current, ...normalized, updatedAt: now.toISOString() };
+  return tasks.map(task => task.id === id ? updated : task);
+}
