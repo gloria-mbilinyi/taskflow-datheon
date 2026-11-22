@@ -1,4 +1,4 @@
-import { createTask, updateTask, deleteTask, ValidationError } from './tasks.js';
+import { createTask, updateTask, deleteTask, toggleTask, clearCompletedTasks, ValidationError } from './tasks.js';
 import { loadFromLocalStorage, saveToLocalStorage } from './storage.js';
 import { renderTasks, renderBasicCounts, toast, showStorageWarning, announce, confirmAction } from './ui.js';
 
@@ -16,6 +16,7 @@ function render() {
 }
 
 function commitTasks(nextTasks, message) {
+  const newlyCompleted = nextTasks.filter(task => task.completed && tasks.some(previous => previous.id === task.id && !previous.completed)).map(task => task.id);
   tasks = nextTasks;
   const result = saveToLocalStorage(tasks, { expectedRaw: storageState.raw, blocked: !storageState.writable });
   dirty = !result.ok;
@@ -23,6 +24,7 @@ function commitTasks(nextTasks, message) {
   else { storageState.writable = false; storageState.error = result.error; }
   showStorageWarning(storageState.error);
   render();
+  for (const row of document.querySelectorAll('.task-card')) if (newlyCompleted.includes(row.dataset.taskId)) row.classList.add('just-completed');
   toast(result.ok ? message : `${message} Changes are in this tab only.`, !result.ok);
   announce(result.ok ? message : `${message} Not saved to this device.`);
   return result.ok;
@@ -75,6 +77,23 @@ document.getElementById('task-list').addEventListener('click', async event => {
     const rows = document.querySelectorAll('.task-card');
     (rows[Math.min(index, rows.length - 1)]?.querySelector('[data-action="edit"]') || document.getElementById('quick-title')).focus();
   }
+});
+
+document.getElementById('task-list').addEventListener('change', event => {
+  if (!event.target.matches('.task-check')) return;
+  const id = event.target.closest('[data-task-id]').dataset.taskId;
+  const task = tasks.find(task => task.id === id);
+  if (!task) return;
+  commitTasks(toggleTask(tasks, id), task.completed ? 'Task reopened. Ready when you are.' : 'Task completed. That’s a win!');
+  const row = [...document.querySelectorAll('.task-card')].find(item => item.dataset.taskId === id);
+  (row?.querySelector('.task-check') || document.getElementById('quick-title')).focus();
+});
+
+document.getElementById('clear-completed').addEventListener('click', async () => {
+  const count = tasks.filter(task => task.completed).length;
+  if (!count) return;
+  const confirmed = await confirmAction({ title: 'Make room for what’s next?', description: `All ${count} completed ${count === 1 ? 'task' : 'tasks'} will be permanently deleted, including any outside your current filters. This cannot be undone.`, accept: 'Clear completed', cancel: 'Keep completed' });
+  if (confirmed) { commitTasks(clearCompletedTasks(tasks), 'Completed tasks cleared. Fresh space, fresh focus.'); document.getElementById('quick-title').focus(); }
 });
 
 form.addEventListener('submit', event => {

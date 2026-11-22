@@ -196,3 +196,5 @@ dialog > p { font-size: .875rem; color: var(--muted); margin-bottom: 25px; }
 .toast .icon-button > svg { width: 14px; height: 14px; }
 .noscript-message { position: fixed; inset: auto 20px 20px; z-index: 30; background: var(--red-soft); color: var(--red); border: 1px solid var(--red); border-radius: 12px; padding: 20px; }
 @keyframes toast-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes complete-task { 0% { background: var(--green-soft); transform: scale(.99); } 100% { background: transparent; transform: scale(1); } }
+.task-card.just-completed { animation: complete-task 650ms ease; }

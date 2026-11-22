@@ -53,3 +53,13 @@ export function updateTask(tasks, id, changes, now = new Date()) {
 export function deleteTask(tasks, id) {
   return tasks.filter(task => task.id !== id);
 }
+
+export function toggleTask(tasks, id, now = new Date()) {
+  const task = tasks.find(task => task.id === id);
+  if (!task) throw new Error('This task no longer exists.');
+  return updateTask(tasks, id, { completed: !task.completed }, now);
+}
+
+export function clearCompletedTasks(tasks) {
+  return tasks.filter(task => !task.completed);
+}

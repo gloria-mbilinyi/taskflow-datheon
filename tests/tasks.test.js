@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createTask, updateTask, deleteTask, normalizeTaskInput, isStoredTask, ValidationError } from '../js/tasks.js';
+import { createTask, updateTask, deleteTask, toggleTask, clearCompletedTasks, normalizeTaskInput, isStoredTask, ValidationError } from '../js/tasks.js';
 import { dueInfo, isValidDate, localDateKey } from '../js/utils.js';
 
 test('creates a valid task with unique ID and both timestamps', () => {
@@ -66,4 +66,16 @@ test('deletes only the requested task without mutating other records', () => {
   assert.deepEqual(deleteTask(tasks, first.id), [second]);
   assert.deepEqual(tasks, [first, second]);
   assert.deepEqual(deleteTask(tasks, 'missing'), tasks);
+});
+test('completes and reopens tasks while updating timestamps and preserving other fields', () => {
+  const task = createTask({ title: 'Ship it', dueDate: '2026-11-22' });
+  const completed = toggleTask([task], task.id, new Date('2026-11-23T10:00:00Z'));
+  assert.equal(completed[0].completed, true);
+  assert.equal(completed[0].updatedAt, '2026-11-23T10:00:00.000Z');
+  assert.equal(toggleTask(completed, task.id)[0].completed, false);
+  assert.equal(task.completed, false);
+});
+test('clears all completed tasks and keeps active tasks in their existing order', () => {
+  const first = createTask({ title: 'First' }); const done = createTask({ title: 'Done', completed: true }); const last = createTask({ title: 'Last' });
+  assert.deepEqual(clearCompletedTasks([first, done, last]), [first, last]);
 });

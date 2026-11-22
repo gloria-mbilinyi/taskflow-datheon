@@ -80,9 +80,9 @@ export function renderTasks(tasks) {
   for (const task of tasks) {
     const item = element('li', `task-card${task.completed ? ' is-completed' : ''}`);
     item.dataset.taskId = task.id;
-    const marker = element('span', 'task-marker');
-    marker.setAttribute('aria-hidden', 'true');
-    marker.append(icon(task.completed ? 'check-circle' : 'circle'));
+    const marker = element('input', 'task-check');
+    marker.type = 'checkbox'; marker.checked = task.completed;
+    marker.setAttribute('aria-label', `${task.completed ? 'Reopen' : 'Complete'} task: ${task.title}`);
     const content = element('div', 'task-content');
     content.append(element('h3', 'task-title', task.title));
     if (task.description) content.append(element('p', 'task-description', task.description));
@@ -117,4 +117,5 @@ export function renderBasicCounts(tasks) {
   }
   for (const category of ['Work', 'Personal', 'Study']) document.getElementById(`count-${category.toLowerCase()}`).textContent = tasks.filter(task => task.category === category).length;
   document.getElementById('task-summary').textContent = `${plural(tasks.length)} in your workspace`;
+  document.getElementById('clear-completed').disabled = completed === 0;
 }
