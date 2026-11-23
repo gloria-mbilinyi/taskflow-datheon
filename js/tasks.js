@@ -63,3 +63,12 @@ export function toggleTask(tasks, id, now = new Date()) {
 export function clearCompletedTasks(tasks) {
   return tasks.filter(task => !task.completed);
 }
+
+export function reorderTasks(tasks, id, targetId, after = false, now = new Date()) {
+  if (id === targetId || !tasks.some(task => task.id === id) || !tasks.some(task => task.id === targetId)) return tasks;
+  const moving = tasks.find(task => task.id === id);
+  const remaining = tasks.filter(task => task.id !== id);
+  const targetIndex = remaining.findIndex(task => task.id === targetId) + (after ? 1 : 0);
+  remaining.splice(targetIndex, 0, { ...moving, updatedAt: now.toISOString() });
+  return remaining;
+}

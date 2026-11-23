@@ -77,7 +77,7 @@ export function confirmAction({ title, description, accept = 'Delete task', canc
 export function renderTasks(tasks, { total = tasks.length, filtered = false } = {}) {
   const list = document.getElementById('task-list');
   list.replaceChildren();
-  for (const task of tasks) {
+  for (const [index, task] of tasks.entries()) {
     const item = element('li', `task-card${task.completed ? ' is-completed' : ''}`);
     item.dataset.taskId = task.id;
     const marker = element('input', 'task-check');
@@ -98,6 +98,13 @@ export function renderTasks(tasks, { total = tasks.length, filtered = false } = 
     const actions = element('div', 'task-actions');
     actions.setAttribute('role', 'group');
     actions.setAttribute('aria-label', `Actions for ${task.title}`);
+    const grip = element('span', 'drag-handle icon-button');
+    grip.draggable = tasks.length > 1; grip.title = 'Drag to reorder';
+    grip.setAttribute('aria-hidden', 'true'); grip.append(icon('grip'));
+    const up = actionButton('up', 'Move up', task.title);
+    const down = actionButton('down', 'Move down', task.title);
+    up.disabled = index === 0; down.disabled = index === tasks.length - 1;
+    actions.append(grip, up, down);
     actions.append(actionButton('edit', 'Edit task', task.title));
     actions.append(actionButton('trash', 'Delete task', task.title, 'delete-task'));
     item.append(marker, content, actions); list.append(item);

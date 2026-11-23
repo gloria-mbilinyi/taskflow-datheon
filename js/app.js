@@ -1,4 +1,4 @@
-import { createTask, updateTask, deleteTask, toggleTask, clearCompletedTasks, ValidationError } from './tasks.js';
+import { createTask, updateTask, deleteTask, toggleTask, clearCompletedTasks, reorderTasks, ValidationError } from './tasks.js';
 import { loadFromLocalStorage, saveToLocalStorage } from './storage.js';
 import { filterTasks } from './filters.js';
 import { renderTasks, renderBasicCounts, toast, showStorageWarning, announce, confirmAction } from './ui.js';
@@ -113,6 +113,17 @@ document.getElementById('task-list').addEventListener('click', async event => {
   if (!row) return;
   const task = tasks.find(task => task.id === row.dataset.taskId);
   if (task && button.dataset.action === 'edit') openTaskDialog(button, task);
+  if (task && ['up', 'down'].includes(button.dataset.action)) {
+    const visible = visibleTasks();
+    const index = visible.findIndex(item => item.id === task.id);
+    const target = visible[index + (button.dataset.action === 'up' ? -1 : 1)];
+    if (!target) return;
+    commitTasks(reorderTasks(tasks, task.id, target.id, button.dataset.action === 'down'), 'Task moved. Your priorities, your order.');
+    const newRow = [...document.querySelectorAll('.task-card')].find(item => item.dataset.taskId === task.id);
+    const sameButton = newRow?.querySelector(`[data-action="${button.dataset.action}"]`);
+    (sameButton && !sameButton.disabled ? sameButton : newRow?.querySelector('.task-check'))?.focus();
+    announce(`Moved ${task.title} to position ${visibleTasks().findIndex(item => item.id === task.id) + 1} of ${visibleTasks().length}.`);
+  }
   if (task && button.dataset.action === 'trash') {
     const confirmed = await confirmAction({ title: 'Let this task go?', description: `“${task.title}” will be permanently deleted from this workspace. This cannot be undone.` });
     if (!confirmed) return;
@@ -121,6 +132,44 @@ document.getElementById('task-list').addEventListener('click', async event => {
     const rows = document.querySelectorAll('.task-card');
     (rows[Math.min(index, rows.length - 1)]?.querySelector('[data-action="edit"]') || document.getElementById('quick-title')).focus();
   }
+});
+
+const taskList = document.getElementById('task-list');
+let draggedId = null;
+function clearDragState() {
+  draggedId = null;
+  for (const row of taskList.children) row.classList.remove('is-dragging', 'drop-target', 'drop-after');
+}
+taskList.addEventListener('dragstart', event => {
+  const handle = event.target.closest('.drag-handle');
+  if (!handle || !event.dataTransfer) { event.preventDefault(); return; }
+  const row = handle.closest('[data-task-id]');
+  draggedId = row.dataset.taskId;
+  event.dataTransfer.setData('text/plain', draggedId);
+  event.dataTransfer.effectAllowed = 'move';
+  row.classList.add('is-dragging');
+});
+taskList.addEventListener('dragover', event => {
+  const row = event.target.closest('[data-task-id]');
+  if (!draggedId || !row || row.dataset.taskId === draggedId) return;
+  event.preventDefault();
+  event.dataTransfer.dropEffect = 'move';
+  for (const other of taskList.children) other.classList.remove('drop-target', 'drop-after');
+  row.classList.add('drop-target');
+  const bounds = row.getBoundingClientRect();
+  row.classList.toggle('drop-after', event.clientY > bounds.top + bounds.height / 2);
+});
+taskList.addEventListener('drop', event => {
+  const row = event.target.closest('[data-task-id]');
+  if (!draggedId || !row || draggedId === row.dataset.taskId) { clearDragState(); return; }
+  event.preventDefault();
+  const next = reorderTasks(tasks, draggedId, row.dataset.taskId, row.classList.contains('drop-after'));
+  clearDragState(); commitTasks(next, 'Tasks reordered. Focus on what’s next.');
+});
+taskList.addEventListener('dragend', clearDragState);
+taskList.addEventListener('dragleave', event => {
+  const row = event.target.closest('[data-task-id]');
+  if (row && !row.contains(event.relatedTarget)) row.classList.remove('drop-target', 'drop-after');
 });
 
 document.getElementById('task-list').addEventListener('change', event => {

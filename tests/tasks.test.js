@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createTask, updateTask, deleteTask, toggleTask, clearCompletedTasks, normalizeTaskInput, isStoredTask, ValidationError } from '../js/tasks.js';
+import { createTask, updateTask, deleteTask, toggleTask, clearCompletedTasks, reorderTasks, normalizeTaskInput, isStoredTask, ValidationError } from '../js/tasks.js';
 import { dueInfo, isValidDate, localDateKey } from '../js/utils.js';
 
 test('creates a valid task with unique ID and both timestamps', () => {
@@ -78,4 +78,13 @@ test('completes and reopens tasks while updating timestamps and preserving other
 test('clears all completed tasks and keeps active tasks in their existing order', () => {
   const first = createTask({ title: 'First' }); const done = createTask({ title: 'Done', completed: true }); const last = createTask({ title: 'Last' });
   assert.deepEqual(clearCompletedTasks([first, done, last]), [first, last]);
+});
+test('reorders before or after a target and keeps unrelated tasks in relative order', () => {
+  const [a, hidden, b, c] = ['A', 'Hidden', 'B', 'C'].map(title => createTask({ title }));
+  const tasks = [a, hidden, b, c];
+  assert.deepEqual(reorderTasks(tasks, c.id, b.id).map(task => task.title), ['A', 'Hidden', 'C', 'B']);
+  assert.deepEqual(reorderTasks(tasks, a.id, b.id, true).map(task => task.title), ['Hidden', 'B', 'A', 'C']);
+  assert.deepEqual(tasks, [a, hidden, b, c]);
+  assert.equal(reorderTasks(tasks, a.id, a.id), tasks);
+  assert.equal(reorderTasks(tasks, 'missing', b.id), tasks);
 });
