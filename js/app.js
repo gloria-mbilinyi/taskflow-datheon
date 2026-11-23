@@ -1,6 +1,7 @@
 import { createTask, updateTask, deleteTask, toggleTask, clearCompletedTasks, reorderTasks, ValidationError } from './tasks.js';
 import { loadFromLocalStorage, saveToLocalStorage } from './storage.js';
 import { filterTasks } from './filters.js';
+import { initializeTheme } from './theme.js';
 import { renderTasks, renderStatistics, toast, showStorageWarning, announce, confirmAction } from './ui.js';
 
 const storageState = loadFromLocalStorage();
@@ -9,6 +10,7 @@ let dirty = false;
 const dialog = document.getElementById('task-dialog');
 const form = document.getElementById('task-form');
 const quickForm = document.getElementById('quick-add');
+initializeTheme(message => toast(message, true));
 let dialogOpener;
 const filters = { status: 'all', category: 'all', query: '' };
 const isFiltered = () => filters.status !== 'all' || filters.category !== 'all' || !!filters.query.trim();
