@@ -125,8 +125,8 @@ h1 > span { color: var(--accent); }
 .list-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 13px 22px; border-top: 1px solid var(--line); font-size: .75rem; color: var(--subtle); background: var(--surface-soft); }
 .list-footer > span { display: inline-flex; align-items: center; gap: 5px; }
 .list-footer svg { width: 13px; height: 13px; }
-.insights-rail { display: grid; gap: 21px; min-width: 0; }
-.progress-card, .upcoming-card { padding: 22px; }
+.insights-rail { display: grid; grid-template-columns: minmax(0, 1fr); gap: 21px; min-width: 0; }
+.progress-card, .upcoming-card { padding: 22px; min-width: 0; }
 .progress-card .section-heading, .upcoming-card .section-heading { justify-content: space-between; }
 .progress-card .section-heading h2, .upcoming-card .section-heading h2 { font-size: .8125rem; }
 .progress-card .section-heading > svg, .upcoming-card .section-heading > svg { width: 17px; height: 17px; color: var(--subtle); }
@@ -156,6 +156,7 @@ progress::-moz-progress-bar { background: var(--accent); }
 .date-tile span { font-size: .75rem; text-transform: uppercase; font-weight: 600; letter-spacing: .06em; }
 .date-tile strong { font-size: .875rem; font-weight: 650; }
 .upcoming-item > div { min-width: 0; }
+.upcoming-item > div:last-child { flex: 1; overflow: hidden; }
 .upcoming-item h3 { font-size: .75rem; font-weight: 550; margin: 0 0 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .upcoming-item p { font-size: .75rem; color: var(--muted); margin: 0; }
 .upcoming-empty { color: var(--muted); font-size: .75rem; line-height: 1.8; padding: 10px 0; }

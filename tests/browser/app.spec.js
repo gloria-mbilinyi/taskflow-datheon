@@ -228,7 +228,9 @@ for (const width of [1440, 768, 390, 320]) {
     await page.setViewportSize({ width, height: 1000 });
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
-    await newTask(page, { title: 'A thoughtful plan for a productive week', description: 'x'.repeat(120), category: 'Study', dueDate: '2026-12-01' });
+    const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
+    const upcomingDate = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
+    await newTask(page, { title: 'A thoughtful plan for a productive week ' + 'x'.repeat(100), description: 'x'.repeat(120), category: 'Study', dueDate: upcomingDate });
     await quickAdd(page, 'Review project goals', 'Work', '2026-11-01');
     await quickAdd(page, 'Make time for a walk', 'Personal');
     await page.getByRole('button', { name: 'Edit task: Review project goals', exact: true }).click();
