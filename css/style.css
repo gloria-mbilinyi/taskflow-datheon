@@ -104,7 +104,7 @@ h1 > span { color: var(--accent); }
 .due-label.soon { color: var(--amber); }
 .task-state { font-size: .75rem; color: var(--subtle); }
 .task-card.is-completed .task-title { color: var(--subtle); text-decoration: line-through; text-decoration-color: var(--subtle); }
-.task-card.is-completed .task-description { opacity: .75; }
+.task-card.is-completed .task-description { color: var(--muted); }
 .task-card.is-completed .task-state { color: var(--green); }
 .task-actions { display: flex; align-items: center; gap: 2px; }
 .task-actions .icon-button { border: none; width: 28px; height: 30px; border-radius: 6px; color: var(--subtle); }

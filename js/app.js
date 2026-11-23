@@ -4,7 +4,7 @@ import { filterTasks } from './filters.js';
 import { initializeTheme } from './theme.js';
 import { initializeNavigation } from './navigation.js';
 import { localDateKey } from './utils.js';
-import { renderTasks, renderStatistics, toast, showStorageWarning, announce, confirmAction } from './ui.js';
+import { renderTasks, renderStatistics, toast, showStorageWarning, announce, confirmAction, initializeDialogFocus } from './ui.js';
 
 const storageState = loadFromLocalStorage();
 let tasks = storageState.tasks;
@@ -14,6 +14,7 @@ const form = document.getElementById('task-form');
 const quickForm = document.getElementById('quick-add');
 initializeTheme(message => toast(message, true));
 initializeNavigation();
+initializeDialogFocus();
 let dialogOpener;
 const filters = { status: 'all', category: 'all', query: '' };
 const isFiltered = () => filters.status !== 'all' || filters.category !== 'all' || !!filters.query.trim();

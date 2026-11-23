@@ -75,6 +75,19 @@ export function confirmAction({ title, description, accept = 'Delete task', canc
   });
 }
 
+export function initializeDialogFocus() {
+  for (const dialog of document.querySelectorAll('dialog')) {
+    dialog.addEventListener('keydown', event => {
+      if (event.key !== 'Tab') return;
+      const controls = [...dialog.querySelectorAll('button:not(:disabled), input:not([type="hidden"]):not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"]')].filter(node => node.getClientRects().length);
+      const first = controls[0]; const last = controls.at(-1);
+      if (!first) { event.preventDefault(); return; }
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    });
+  }
+}
+
 export function renderTasks(tasks, { total = tasks.length, filtered = false } = {}) {
   const list = document.getElementById('task-list');
   list.replaceChildren();
