@@ -23,6 +23,7 @@ test.beforeEach(async ({ page }) => { await page.goto('./'); });
 test('loads every application asset without runtime or request errors', async ({ page }) => {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
+  page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
   page.on('requestfailed', request => errors.push(request.url()));
   page.on('response', response => { if (response.status() >= 400) errors.push(`${response.status()} ${response.url()}`); });
   await page.reload();

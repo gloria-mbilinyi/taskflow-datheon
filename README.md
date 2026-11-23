@@ -162,7 +162,11 @@ Reports are in `playwright-report/`, with screenshots/failure traces in `test-re
 
 ## Deployment
 
-Target: **GitHub Pages**, with public HTTPS under the existing repository. Initial publication is prepared in the deployment milestone; success is reported only after the workflow and actual URL are verified.
+GitHub Pages address: [TaskFlow live demo](https://gloria-mbilinyi.github.io/taskflow-datheon/).
+
+`.github/workflows/pages.yml` checks every push and pull request to `main`. It installs test-only dependencies, runs all 48 tests and syntax/asset checks, then builds `dist/`. Successful pushes to `main` publish that static artifact to GitHub Pages over HTTPS. Actions are pinned to verified commit hashes. A failed verification prevents deployment.
+
+`npm run build` packages only the app HTML, CSS, JavaScript, and icons. Development dependencies, tests, credentials, and Git metadata are excluded. `build-info.json` identifies the deployed source commit. To publish initially, enable **Settings → Pages → GitHub Actions**; the site is available after the workflow succeeds. Static hosting has no application backend.
 
 Relative asset/module paths support `/taskflow-datheon/`. The app also works as a static Cloudflare Pages project. See the [official GitHub Pages workflow guide](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages).
 
