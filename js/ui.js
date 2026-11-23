@@ -1,4 +1,5 @@
-import { dueInfo, plural } from './utils.js';
+import { dueInfo, plural, dateFromKey } from './utils.js';
+import { getStatistics, getUpcomingTasks } from './statistics.js';
 
 export function element(tag, className = '', text = '') {
   const node = document.createElement(tag);
@@ -119,8 +120,8 @@ export function renderTasks(tasks, { total = tasks.length, filtered = false } = 
 }
 
 export function renderBasicCounts(tasks) {
-  const completed = tasks.filter(task => task.completed).length;
-  const values = { total: tasks.length, active: tasks.length - completed, completed, overdue: tasks.filter(task => dueInfo(task.dueDate, task.completed).kind === 'overdue').length };
+  const { percent, ...values } = getStatistics(tasks);
+  const completed = values.completed;
   for (const [key, count] of Object.entries(values)) {
     document.getElementById(`stat-${key}`).textContent = count;
     const nav = document.getElementById(`nav-${key}`);
@@ -129,4 +130,34 @@ export function renderBasicCounts(tasks) {
   for (const category of ['Work', 'Personal', 'Study']) document.getElementById(`count-${category.toLowerCase()}`).textContent = tasks.filter(task => task.category === category).length;
   document.getElementById('task-summary').textContent = `${plural(tasks.length)} in your workspace`;
   document.getElementById('clear-completed').disabled = completed === 0;
+}
+
+export function renderStatistics(tasks) {
+  renderBasicCounts(tasks);
+  const stats = getStatistics(tasks);
+  const percentage = document.getElementById('progress-percent');
+  percentage.replaceChildren(document.createTextNode(stats.percent), element('span', '', '%'));
+  document.getElementById('ring-value').style.strokeDashoffset = 100 - stats.percent;
+  document.getElementById('progress-ring').setAttribute('aria-label', `${stats.percent} percent of ${stats.total} tasks completed`);
+  const progress = document.getElementById('task-progress');
+  progress.value = stats.percent; progress.textContent = `${stats.percent}%`;
+  document.getElementById('progress-fraction').textContent = `${stats.completed} of ${stats.total} tasks`;
+  document.getElementById('progress-title').textContent = !stats.total ? 'A fresh start awaits' : stats.percent === 100 ? 'Look at you go!' : stats.percent === 0 ? 'Ready, set, focus.' : 'You’re making it happen.';
+  document.getElementById('progress-description').textContent = stats.percent === 100 && stats.total ? 'Everything’s done. Enjoy a little breathing room.' : 'Every little step moves you forward.';
+  document.getElementById('overdue-note').textContent = stats.overdue ? 'A fresh plan starts here' : 'You’re all caught up';
+  const upcoming = document.getElementById('upcoming-list');
+  upcoming.replaceChildren();
+  const items = getUpcomingTasks(tasks);
+  if (!items.length) upcoming.append(element('li', 'upcoming-empty', 'Nothing due soon. A little breathing room.'));
+  for (const task of items) {
+    const date = dateFromKey(task.dueDate);
+    const item = element('li', 'upcoming-item');
+    const tile = element('div', 'date-tile');
+    tile.setAttribute('aria-hidden', 'true');
+    tile.append(element('span', '', new Intl.DateTimeFormat('en', { month: 'short' }).format(date)), element('strong', '', String(date.getDate())));
+    const content = element('div');
+    const title = element('h3', '', task.title); title.title = task.title;
+    content.append(title, element('p', '', `${task.category} · ${dueInfo(task.dueDate).label}`));
+    item.append(tile, content); upcoming.append(item);
+  }
 }

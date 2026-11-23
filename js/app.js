@@ -1,7 +1,7 @@
 import { createTask, updateTask, deleteTask, toggleTask, clearCompletedTasks, reorderTasks, ValidationError } from './tasks.js';
 import { loadFromLocalStorage, saveToLocalStorage } from './storage.js';
 import { filterTasks } from './filters.js';
-import { renderTasks, renderBasicCounts, toast, showStorageWarning, announce, confirmAction } from './ui.js';
+import { renderTasks, renderStatistics, toast, showStorageWarning, announce, confirmAction } from './ui.js';
 
 const storageState = loadFromLocalStorage();
 let tasks = storageState.tasks;
@@ -16,7 +16,7 @@ const visibleTasks = () => filterTasks(tasks, filters);
 
 function render() {
   renderTasks(visibleTasks(), { total: tasks.length, filtered: isFiltered() });
-  renderBasicCounts(tasks);
+  renderStatistics(tasks);
   for (const button of document.querySelectorAll('[data-status]')) {
     const selected = button.dataset.status === filters.status;
     button.classList.toggle('is-selected', selected); button.setAttribute('aria-pressed', selected);
