@@ -26,7 +26,7 @@ export function dueInfo(value, completed = false, now = new Date()) {
   if (!date) return { label: value ? 'Invalid date' : 'No due date', kind: 'none', days: null };
   const today = dateFromKey(localDateKey(now));
   // Compare calendar days in UTC to avoid daylight-saving changes.
-  const serial = d => Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
+  const serial = d => { const utc = new Date(0); utc.setUTCFullYear(d.getFullYear(), d.getMonth(), d.getDate()); utc.setUTCHours(0, 0, 0, 0); return utc.getTime(); };
   const days = Math.round((serial(date) - serial(today)) / 86400000);
   const formatted = new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', ...(date.getFullYear() !== now.getFullYear() ? { year: 'numeric' } : {}) }).format(date);
   const label = days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : formatted;

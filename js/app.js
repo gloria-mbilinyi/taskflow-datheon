@@ -1,7 +1,9 @@
 import { createTask, updateTask, deleteTask, toggleTask, clearCompletedTasks, reorderTasks, ValidationError } from './tasks.js';
-import { loadFromLocalStorage, saveToLocalStorage } from './storage.js';
+import { loadFromLocalStorage, saveToLocalStorage, STORAGE_KEY } from './storage.js';
 import { filterTasks } from './filters.js';
 import { initializeTheme } from './theme.js';
+import { initializeNavigation } from './navigation.js';
+import { localDateKey } from './utils.js';
 import { renderTasks, renderStatistics, toast, showStorageWarning, announce, confirmAction } from './ui.js';
 
 const storageState = loadFromLocalStorage();
@@ -11,12 +13,17 @@ const dialog = document.getElementById('task-dialog');
 const form = document.getElementById('task-form');
 const quickForm = document.getElementById('quick-add');
 initializeTheme(message => toast(message, true));
+initializeNavigation();
 let dialogOpener;
 const filters = { status: 'all', category: 'all', query: '' };
 const isFiltered = () => filters.status !== 'all' || filters.category !== 'all' || !!filters.query.trim();
 const visibleTasks = () => filterTasks(tasks, filters);
 
 function render() {
+  const focused = document.activeElement;
+  const focusedRow = focused.closest?.('.task-card');
+  const focusId = focusedRow?.dataset.taskId;
+  const focusAction = focused.dataset?.action;
   renderTasks(visibleTasks(), { total: tasks.length, filtered: isFiltered() });
   renderStatistics(tasks);
   for (const button of document.querySelectorAll('[data-status]')) {
@@ -28,6 +35,11 @@ function render() {
     button.classList.toggle('is-selected', selected); button.setAttribute('aria-pressed', selected);
   }
   document.getElementById('category-filter').value = filters.category;
+  if (focusId) {
+    const row = [...document.querySelectorAll('.task-card')].find(item => item.dataset.taskId === focusId);
+    const control = focusAction ? [...(row?.querySelectorAll('[data-action]') || [])].find(button => button.dataset.action === focusAction && !button.disabled) : row?.querySelector('.task-check');
+    (control || row?.querySelector('.task-check') || document.getElementById('quick-title')).focus();
+  }
 }
 
 function resetFilters() {
@@ -91,7 +103,7 @@ function openTaskDialog(opener, task = null) {
   if (task) {
     for (const field of ['title', 'description', 'category', 'dueDate']) form.elements[field].value = task[field];
     form.elements.completed.checked = task.completed;
-  }
+  } else form.elements.category.value = filters.category !== 'all' ? filters.category : quickForm.elements.category.value;
   dialog.showModal();
   form.elements.title.focus();
 }
@@ -200,7 +212,7 @@ form.addEventListener('submit', event => {
       commitTasks(updateTask(tasks, input.taskId, { ...input, completed: form.elements.completed.checked }), 'Task updated. Your plan, refined.');
     } else {
       const task = createTask({ ...input, completed: false });
-      commitTasks([...tasks, task], 'Task created. You’ve got this.');
+      commitTasks([...tasks, task], filterTasks([task], filters).length ? 'Task created. You’ve got this.' : 'Task created. It’s outside your current filters.');
     }
     dialog.close();
   } catch (error) {
@@ -220,10 +232,11 @@ quickForm.addEventListener('submit', event => {
   const errorNode = document.getElementById('quick-error');
   errorNode.textContent = '';
   quickForm.elements.title.removeAttribute('aria-invalid');
+  quickForm.elements.dueDate.removeAttribute('aria-invalid');
   try {
     if (quickForm.elements.dueDate.validity.badInput) throw new ValidationError({ dueDate: 'Choose a valid date, or leave it empty.' });
     const task = createTask(Object.fromEntries(new FormData(quickForm)));
-    commitTasks([...tasks, task], 'Task added. One step closer.');
+    commitTasks([...tasks, task], filterTasks([task], filters).length ? 'Task added. One step closer.' : 'Task added. It’s outside your current filters.');
     quickForm.elements.title.value = '';
     quickForm.elements.title.focus();
   } catch (error) {
@@ -232,6 +245,64 @@ quickForm.addEventListener('submit', event => {
     field.setAttribute('aria-invalid', 'true'); field.focus();
   }
 });
+
+document.addEventListener('keydown', event => {
+  if (event.key.toLowerCase() === 'n' && !event.ctrlKey && !event.metaKey && !event.altKey && !event.target.matches('input, textarea, select, [contenteditable="true"]') && !document.querySelector('dialog[open]')) {
+    event.preventDefault(); openTaskDialog(document.activeElement);
+  }
+});
+
+const exportButton = document.getElementById('export-backup');
+exportButton.disabled = false;
+exportButton.addEventListener('click', () => {
+  const backup = { version: 1, exportedAt: new Date().toISOString(), tasks, originalSavedData: storageState.raw };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url; link.download = `taskflow-backup-${localDateKey()}.json`;
+  document.body.append(link); link.click(); link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+  toast('Backup downloaded. Keep it somewhere safe.');
+});
+
+const resetButton = document.getElementById('reset-storage');
+resetButton.disabled = false;
+resetButton.addEventListener('click', async () => {
+  const confirmed = await confirmAction({ title: 'Reset saved data?', description: 'Replace the saved workspace with this tab’s readable tasks. Unreadable records in the original will be lost. Download a backup first. If saving fails, the original will be kept.', accept: 'Reset saved data', cancel: 'Keep saved data' });
+  if (!confirmed) return;
+  const result = saveToLocalStorage(tasks, { expectedRaw: storageState.raw });
+  if (result.ok) {
+    Object.assign(storageState, { raw: result.raw, writable: true, error: null }); dirty = false;
+    showStorageWarning(null); toast('Workspace recovered and saved on this device.');
+    document.getElementById('quick-title').focus();
+  } else { showStorageWarning(result.error); toast('Saved data was not replaced. Please keep a backup.', true); }
+});
+
+window.addEventListener('storage', event => {
+  if (event.key !== STORAGE_KEY && event.key !== null) return;
+  if (dirty) {
+    storageState.writable = false;
+    storageState.error = 'Saved tasks changed in another tab. Your unsaved changes are protected here. Download a backup before reloading.';
+  } else {
+    const loaded = loadFromLocalStorage();
+    Object.assign(storageState, loaded);
+    if (loaded.writable) { tasks = loaded.tasks; render(); announce('Workspace updated from another tab.'); }
+    else dirty = tasks.length > 0;
+  }
+  showStorageWarning(storageState.error);
+});
+
+window.addEventListener('beforeunload', event => {
+  if (dirty && tasks.length) { event.preventDefault(); event.returnValue = ''; }
+});
+
+let currentDay = localDateKey();
+function refreshCalendar() {
+  const day = localDateKey();
+  if (day !== currentDay) { currentDay = day; render(); }
+}
+setInterval(refreshCalendar, 60000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshCalendar(); });
 
 showStorageWarning(storageState.error);
 render();
